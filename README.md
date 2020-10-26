@@ -18,6 +18,7 @@ A simple card to display big numbers for sensors. It also supports severity leve
 | style | string| `var(--label-badge-blue)` | Default bar color. Can be either hex or HA variable. Example: 'var(--label-badge-green)'
 | from | string | left | Direction from where the bar will start filling (must have min/max specified)
 | severity | list | optional | A list of severity objects. Items in list must be ascending based on 'value'
+| info | string | entity | `sensor.my_temperature_avg` More info of alternative entity
 
 Severity object
 
