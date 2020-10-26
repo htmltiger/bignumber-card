@@ -1,12 +1,10 @@
 class BigNumberCard extends HTMLElement {
-  _DEFAULT_STYLE = 'var(--label-badge-blue)';
-  _DEFAULT_COLOR = 'var(--primary-text-color)';
-  
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
   }
   setConfig(config) {
+    console.info('BigNumberCard 1.1');
     if (!config.entity) {
       throw new Error('Please define an entity');
     }
@@ -15,6 +13,7 @@ class BigNumberCard extends HTMLElement {
     if (root.lastChild) root.removeChild(root.lastChild);
     const cardConfig = Object.assign({}, config);
     if (!cardConfig.scale) cardConfig.scale = "50px";
+    if (!cardConfig.info) cardConfig.info = cardConfig.entity;
     if (!cardConfig.from) cardConfig.from = "left";
     const card = document.createElement('ha-card');
     const content = document.createElement('div');
@@ -26,30 +25,30 @@ class BigNumberCard extends HTMLElement {
     style.textContent = `
       ha-card {
         text-align: center;
-        --bignumber-color: ${this._getColor(null, cardConfig)};
-        --bignumber-fill-color: ${this._getStyle(null, cardConfig)};
+        --bignumber-fill-color: var(--label-badge-blue);
         --bignumber-percent: 100%;
         --bignumber-direction: ${cardConfig.from};
         --base-unit: ${cardConfig.scale};
         padding: calc(var(--base-unit)*0.6) calc(var(--base-unit)*0.3);
-        background: linear-gradient(to var(--bignumber-direction), var(--paper-card-background-color) var(--bignumber-percent), var(--bignumber-fill-color) var(--bignumber-percent));
+        background: linear-gradient(to var(--bignumber-direction), var(--card-background-color) var(--bignumber-percent), var(--bignumber-fill-color) var(--bignumber-percent));
       }
       #value {
         font-size: calc(var(--base-unit) * 1.3);
         line-height: calc(var(--base-unit) * 1.3);
-        color: var(--bignumber-color);
+        color: var(--primary-text-color);
       }
+	  #value small{opacity: 0.5}
       #title {
         font-size: calc(var(--base-unit) * 0.5);
         line-height: calc(var(--base-unit) * 0.5);
-        color: var(--bignumber-color);
+        color: var(--primary-text-color);
       }
     `;
     card.appendChild(content);
     card.appendChild(title);
     card.appendChild(style);
     card.addEventListener('click', event => {
-      this._fire('hass-more-info', { entityId: cardConfig.entity });
+      this._fire('hass-more-info', { entityId: cardConfig.info });
     });
     root.appendChild(card);
     this._config = cardConfig;
@@ -70,29 +69,14 @@ class BigNumberCard extends HTMLElement {
   }
 
   _computeSeverity(stateValue, sections) {
-    if (stateValue === undefined || stateValue === null) return;
     const numberValue = Number(stateValue);
-    for (const section of sections) {
-      if (numberValue <= section.value) return section;
-    }
-  }
-
-  _getColor(entityState, config) {
-    if (config.severity) {
-      const severity = this._computeSeverity(entityState, config.severity);
-      if (severity && severity.color) return severity.color;
-    }
-    if (config.color) return config.color;
-    return this._DEFAULT_COLOR;
-  }
-
-  _getStyle(entityState, config) {
-    if (config.severity) {
-      const severity = this._computeSeverity(entityState, config.severity);
-      if (severity && severity.style) return severity.style;
-    }
-    if (config.style) return config.style;
-    return this._DEFAULT_STYLE;
+    let style;
+    sections.forEach(section => {
+      if (numberValue <= section.value && !style) {
+        style = section.style;
+      }
+    });
+    return style || 'var(--label-badge-blue)';
   }
 
   _translatePercent(value, min, max) {
@@ -109,9 +93,10 @@ class BigNumberCard extends HTMLElement {
       if (config.min !== undefined && config.max !== undefined) {
         root.querySelector("ha-card").style.setProperty('--bignumber-percent', `${this._translatePercent(entityState, config.min, config.max)}%`);
       }
-      root.querySelector("ha-card").style.setProperty('--bignumber-fill-color', `${this._getStyle(entityState, config)}`);
-      root.querySelector("ha-card").style.setProperty('--bignumber-color', `${this._getColor(entityState, config)}`);
-      root.getElementById("value").textContent = `${entityState} ${measurement}`;
+      if (config.severity) {
+        root.querySelector("ha-card").style.setProperty('--bignumber-fill-color', `${this._computeSeverity(entityState, config.severity)}`);
+      }
+      root.getElementById("value").innerHTML = `${entityState}<small>${measurement}</small>`;
       this._entityState = entityState
     }
     root.lastChild.hass = hass;
