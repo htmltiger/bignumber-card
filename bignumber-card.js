@@ -1,10 +1,10 @@
+console.info('BigNumberCard 1.1');
 class BigNumberCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
   }
   setConfig(config) {
-    console.info('BigNumberCard 1.1');
     if (!config.entity) {
       throw new Error('Please define an entity');
     }
